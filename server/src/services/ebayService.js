@@ -1,24 +1,19 @@
-// src/services/ebayService.js
 const axios = require('axios');
 require('dotenv').config();
 
 // eBay API configuration
-const EBAY_CLIENT_ID = process.env.EBAY_CLIENT_ID || 'AlbertoA-Website-SBX-f1c881c32-2d458410';
-const EBAY_CLIENT_SECRET = process.env.EBAY_CLIENT_SECRET || 'SBX-1c881c320609-8906-4651-a956-7372';
-const EBAY_SANDBOX = process.env.EBAY_SANDBOX !== 'false'; // Default to sandbox mode
+const EBAY_CLIENT_ID = process.env.EBAY_CLIENT_ID || 'Your-Client-ID';
+const EBAY_CLIENT_SECRET = process.env.EBAY_CLIENT_SECRET || 'Your-Client-Secret';
 
-// Use mock data as fallback
-const USE_MOCK_DATA = process.env.USE_MOCK_DATA === 'true';
+// Use mock data as fallback - always true for now due to rate limits
+const USE_MOCK_DATA = true; // Force mock data until rate limits reset
 
 // eBay API endpoints
-const SANDBOX_AUTH_URL = 'https://api.sandbox.ebay.com/identity/v1/oauth2/token';
-const PRODUCTION_AUTH_URL = 'https://api.ebay.com/identity/v1/oauth2/token';
-const AUTH_URL = EBAY_SANDBOX ? SANDBOX_AUTH_URL : PRODUCTION_AUTH_URL;
+const AUTH_URL = 'https://api.ebay.com/identity/v1/oauth2/token';
 
-// Finding API URL
-const SANDBOX_FINDING_API_URL = 'https://svcs.sandbox.ebay.com/services/search/FindingService/v1';
-const PRODUCTION_FINDING_API_URL = 'https://svcs.ebay.com/services/search/FindingService/v1';
-const FINDING_API_URL = EBAY_SANDBOX ? SANDBOX_FINDING_API_URL : PRODUCTION_FINDING_API_URL;
+// Cache durations
+const CACHE_TTL = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
+const apiCache = {};
 
 // Token storage
 let accessToken = null;
@@ -28,163 +23,81 @@ let tokenExpiry = null;
  * Get OAuth access token for eBay API
  */
 async function getEbayAccessToken() {
+  if (accessToken && tokenExpiry && tokenExpiry > Date.now()) {
+    console.log('Reusing cached eBay access token...');
+    return accessToken;
+  }
+  
   try {
-    // Check if token exists and is not expired
-    if (accessToken && tokenExpiry && tokenExpiry > Date.now()) {
-      return accessToken;
-    }
-    
-    // Need to get a new token
-    console.log('Getting new eBay access token...');
-    
-    // Convert client ID and secret to Base64 for Basic Auth
-    const credentials = Buffer.from(`${EBAY_CLIENT_ID}:${EBAY_CLIENT_SECRET}`).toString('base64');
-    
-    const response = await axios.post(AUTH_URL, 
+    console.log('Requesting new eBay access token...');
+    const response = await axios.post(
+      AUTH_URL,
       'grant_type=client_credentials&scope=https://api.ebay.com/oauth/api_scope',
       {
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
-          'Authorization': `Basic ${credentials}`
+          Authorization: `Basic ${Buffer.from(`${EBAY_CLIENT_ID}:${EBAY_CLIENT_SECRET}`).toString('base64')}`
         }
       }
     );
     
-    if (response.data && response.data.access_token) {
-      accessToken = response.data.access_token;
-      // Set expiry time (subtract 5 minutes to be safe)
-      tokenExpiry = Date.now() + (response.data.expires_in * 1000) - (5 * 60 * 1000);
-      return accessToken;
-    } else {
-      throw new Error('Failed to obtain access token from eBay');
-    }
+    accessToken = response.data.access_token;
+    tokenExpiry = Date.now() + (response.data.expires_in * 1000) - (5 * 60 * 1000); // Subtract 5 mins for safety
+    return accessToken;
   } catch (error) {
-    console.error('Error getting eBay access token:', error.response?.data || error.message);
-    throw error;
+    console.error('Error fetching eBay access token:', error.response?.data || error.message);
+    throw new Error('Failed to fetch eBay access token');
   }
 }
 
 /**
- * Search for completed manga set listings on eBay
- * @param {string} series - Manga series name
- * @param {string} volumes - Volume range (e.g., "1-3")
- * @return {Object} - Success status and data
+ * Search for completed manga set listings
+ * This function now ALWAYS returns mock data due to API rate limits
  */
 async function searchCompletedMangaSets(series, volumes) {
   try {
-    // Parse volume range if provided
+    // Create cache key from search params
+    const cacheKey = `${series}_${volumes}`;
+    
+    // Check if we have cached results that aren't expired
+    if (apiCache[cacheKey] && apiCache[cacheKey].timestamp > Date.now() - CACHE_TTL) {
+      console.log('Using cached search results');
+      return apiCache[cacheKey].data;
+    }
+    
+    console.log(`Searching for: ${series} manga ${volumes}`);
+    console.log('Using mock data due to eBay API rate limits');
+    
+    // Parse volume range
     let volumeStart, volumeEnd;
     if (volumes && volumes.includes('-')) {
-      [volumeStart, volumeEnd] = volumes.split('-').map(v => parseInt(v));
+      [volumeStart, volumeEnd] = volumes.split('-').map(v => parseInt(v, 10));
     } else if (volumes) {
-      volumeStart = parseInt(volumes);
+      volumeStart = parseInt(volumes, 10);
       volumeEnd = volumeStart;
+    } else {
+      volumeStart = 1;
+      volumeEnd = 10;
     }
     
-    // Create search query based on parameters
-    const searchQuery = buildSearchQuery(series, volumeStart, volumeEnd);
+    // Generate mock results
+    const mockResult = getMockSearchResults(series, volumes);
     
-    console.log(`Searching eBay for: ${searchQuery}`);
+    // Cache the mock result
+    apiCache[cacheKey] = {
+      timestamp: Date.now(),
+      data: mockResult
+    };
     
-    try {
-      // Get OAuth token
-      const token = await getEbayAccessToken();
-      
-      // Get completed listings from eBay
-      const response = await axios.get(FINDING_API_URL, {
-        params: {
-          'OPERATION-NAME': 'findCompletedItems',
-          'SERVICE-VERSION': '1.0.0',
-          'SECURITY-APPNAME': EBAY_CLIENT_ID,
-          'RESPONSE-DATA-FORMAT': 'JSON',
-          'REST-PAYLOAD': true,
-          'keywords': searchQuery,
-          'categoryId': '261186', // Comics & Graphic Novels
-          'itemFilter(0).name': 'SoldItemsOnly',
-          'itemFilter(0).value': 'true',
-          'sortOrder': 'EndTimeSoonest',
-          'paginationInput.entriesPerPage': '50'
-        },
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'X-EBAY-SOA-GLOBAL-ID': 'EBAY-US'
-        }
-      });
-
-      // Process API response
-      if (!response.data || 
-          !response.data.findCompletedItemsResponse || 
-          !response.data.findCompletedItemsResponse[0].searchResult || 
-          !response.data.findCompletedItemsResponse[0].searchResult[0].item) {
-        console.log('No items found in eBay response');
-        
-        if (USE_MOCK_DATA) {
-          console.log('Using mock data since real API returned no results');
-          return getMockSearchResults(series, volumes);
-        }
-        
-        return {
-          success: false,
-          message: 'No sold listings found for this manga series',
-          data: []
-        };
-      }
-
-      // Process results
-      const items = response.data.findCompletedItemsResponse[0].searchResult[0].item;
-      
-      // Filter out irrelevant results
-      const relevantItems = filterRelevantItems(items, series, volumeStart, volumeEnd);
-      
-      if (relevantItems.length === 0) {
-        if (USE_MOCK_DATA) {
-          console.log('Using mock data since no relevant items were found');
-          return getMockSearchResults(series, volumes);
-        }
-        
-        return {
-          success: false,
-          message: 'No relevant sold listings found for this manga series',
-          data: []
-        };
-      }
-      
-      return {
-        success: true,
-        message: `Found ${relevantItems.length} sold listings`,
-        data: relevantItems
-      };
-    } catch (apiError) {
-      console.error('eBay API error:', apiError.response?.data || apiError.message);
-      
-      if (USE_MOCK_DATA) {
-        console.log('Falling back to mock data due to eBay API error');
-        return getMockSearchResults(series, volumes);
-      }
-      
-      throw apiError;
-    }
+    return mockResult;
   } catch (error) {
     console.error('Search error:', error);
-    
-    if (USE_MOCK_DATA) {
-      console.log('Falling back to mock data due to error');
-      return getMockSearchResults(series, volumes);
-    }
-    
-    return {
-      success: false,
-      message: 'Error fetching data from eBay API',
-      error: error.message
-    };
+    return getMockSearchResults(series, volumes);
   }
 }
 
 /**
  * Calculate price metrics from sold listings data
- * @param {Array} items - Sold listing items
- * @param {number} totalVolumes - Total number of volumes in set
- * @return {Object} - Price metrics
  */
 function calculateMangaPrices(items, totalVolumes) {
   if (!items || items.length === 0) {
@@ -226,7 +139,6 @@ function calculateMangaPrices(items, totalVolumes) {
   }));
 
   // Calculate price trend (mock for now - would need historical data)
-  // In a real implementation, you'd compare to past prices
   const priceTrend = Math.random() * 20 - 10; // -10% to +10% for demo
   
   return {
@@ -239,11 +151,7 @@ function calculateMangaPrices(items, totalVolumes) {
 }
 
 /**
- * Fetch manga prices from eBay sold listings
- * @param {string} series - Manga series name
- * @param {number|string} volumeStart - Starting volume or volume range string
- * @param {number} volumeEnd - Ending volume
- * @param {string} condition - Condition of the books
+ * Fetch manga prices
  */
 async function fetchEbayPrices(series, volumeStart, volumeEnd, condition) {
   try {
@@ -268,7 +176,7 @@ async function fetchEbayPrices(series, volumeStart, volumeEnd, condition) {
       totalVols = 1;
     }
     
-    // Call search function
+    // Call search function which will return mock data
     const searchResults = await searchCompletedMangaSets(series, volumes);
     
     if (!searchResults.success) {
@@ -288,7 +196,8 @@ async function fetchEbayPrices(series, volumeStart, volumeEnd, condition) {
       averagePrice: priceData.averageSetPrice,
       priceTrend: priceData.priceTrend,
       numberOfListings: priceData.numberOfListings,
-      recentSales: priceData.recentSales
+      recentSales: priceData.recentSales,
+      source: 'mock' // Add source to indicate this is mock data
     };
   } catch (error) {
     console.error('Error in fetchEbayPrices:', error);
@@ -297,57 +206,14 @@ async function fetchEbayPrices(series, volumeStart, volumeEnd, condition) {
 }
 
 /**
- * Build search query for eBay API
- */
-function buildSearchQuery(series, volumeStart, volumeEnd) {
-  let query = `${series} manga`;
-  
-  // If volumes are specified
-  if (volumeStart && volumeEnd) {
-    // If looking for a single volume
-    if (volumeStart === volumeEnd) {
-      query += ` volume ${volumeStart}`;
-    } else {
-      // Looking for complete or partial sets
-      query += ` volumes ${volumeStart}-${volumeEnd} complete set`;
-    }
-  }
-  
-  return query;
-}
-
-/**
- * Filter results to only include relevant manga listings
- */
-function filterRelevantItems(items, series, volumeStart, volumeEnd) {
-  const seriesLower = series.toLowerCase();
-  
-  return items.filter(item => {
-    const title = item.title?.[0]?.toLowerCase() || '';
-    
-    // Must contain series name
-    if (!title.includes(seriesLower)) return false;
-    
-    // Must contain "manga" or "volume" or "vol"
-    if (!title.includes('manga') && !title.includes('volume') && !title.includes('vol')) return false;
-    
-    // Filter out unrelated items (posters, toys, etc)
-    if (title.includes('poster') || title.includes('figure') || title.includes('toy')) return false;
-    
-    return true;
-  });
-}
-
-/**
- * Create mock search results for testing
+ * Create mock search results for testing.
  */
 function getMockSearchResults(series, volumes) {
-  // Parse volume range
   let volumeStart, volumeEnd;
   if (volumes && volumes.includes('-')) {
-    [volumeStart, volumeEnd] = volumes.split('-').map(v => parseInt(v));
+    [volumeStart, volumeEnd] = volumes.split('-').map(v => parseInt(v, 10));
   } else if (volumes) {
-    volumeStart = parseInt(volumes);
+    volumeStart = parseInt(volumes, 10);
     volumeEnd = volumeStart;
   } else {
     volumeStart = 1;
@@ -357,22 +223,29 @@ function getMockSearchResults(series, volumes) {
   const totalVolumes = volumeEnd - volumeStart + 1;
   const isComplete = totalVolumes > 5;
   
-  // Generate 3-5 mock listings
+  // Generate 3-5 realistic listings
   const count = Math.floor(Math.random() * 3) + 3;
   const items = [];
   
+  // Set base price to be more realistic for manga
+  const basePricePerVolume = 9 + Math.random() * 6; // $9-$15 per volume
+  
   for (let i = 0; i < count; i++) {
-    // Generate a realistic price based on volume count
-    const basePrice = 10; // $10 per volume on average
-    const priceVariation = Math.random() * 4 - 2; // +/- $2 variation
-    const totalPrice = (basePrice + priceVariation) * totalVolumes;
+    // Generate a realistic price with volume discount for larger sets
+    const discount = totalVolumes > 20 ? 0.25 : // 25% discount for large sets
+                    totalVolumes > 10 ? 0.15 : // 15% discount for medium sets
+                    totalVolumes > 5 ? 0.1 : 0; // 10% discount for small sets
+    
+    const pricePerVolume = basePricePerVolume * (1 - discount);
+    const priceVariation = Math.random() * 0.2 - 0.1; // +/- 10% variation
+    const totalPrice = (pricePerVolume * (1 + priceVariation)) * totalVolumes;
     
     const now = new Date();
-    const endDate = new Date(now.setDate(now.getDate() - (i * 3))); // Sales ended recently
+    const endDate = new Date(now.setDate(now.getDate() - (i * 3 + Math.floor(Math.random() * 10)))); // More randomized recent dates
     
     items.push({
       itemId: [String(10000000 + Math.floor(Math.random() * 1000000))],
-      title: [`${series} Manga ${isComplete ? 'Complete' : ''} Set Volumes ${volumeStart}-${volumeEnd}`],
+      title: [`${series} Manga ${isComplete ? 'Complete' : ''} Set Volumes ${volumeStart}-${volumeEnd} ${getRandomCondition()}`],
       viewItemURL: [`https://www.ebay.com/itm/${10000000 + Math.floor(Math.random() * 1000000)}`],
       sellingStatus: [{
         convertedCurrentPrice: [{
@@ -383,57 +256,83 @@ function getMockSearchResults(series, volumes) {
       }],
       listingInfo: [{
         endTime: [endDate.toISOString()],
-        listingType: ["FixedPrice"]
+        listingType: [Math.random() > 0.3 ? "FixedPrice" : "Auction"]
       }]
     });
   }
   
-  return {
-    success: true,
-    message: `Found ${count} mock listings for testing`,
-    data: items
+  return { 
+    success: true, 
+    message: `Found ${count} mock listings for testing`, 
+    data: items,
+    source: 'mock'
   };
+}
+
+// Helper function to get random condition for mock listings
+function getRandomCondition() {
+  const conditions = [
+    "Like New", "Very Good Condition", "Good Condition", 
+    "Acceptable", "Used", "Complete Set", "First Print"
+  ];
+  return conditions[Math.floor(Math.random() * conditions.length)];
 }
 
 /**
  * Generate mock price data for testing
  */
 function getMockPriceData(series, totalVolumes) {
-  // Calculate realistic mock prices
-  const basePrice = 10; // $10 per volume average
-  const totalPrice = basePrice * totalVolumes;
+  // Set base price to be more realistic for manga
+  const basePricePerVolume = 9 + Math.random() * 6; // $9-$15 per volume
+  
+  // Apply volume discount for larger sets
+  const discount = totalVolumes > 20 ? 0.25 : // 25% discount for large sets
+                  totalVolumes > 10 ? 0.15 : // 15% discount for medium sets
+                  totalVolumes > 5 ? 0.1 : 0; // 10% discount for small sets
+  
+  const discountedPricePerVolume = basePricePerVolume * (1 - discount);
+  const totalPrice = discountedPricePerVolume * totalVolumes;
   
   // Add some variation
-  const priceVariation = Math.random() * 0.3 - 0.15; // +/- 15%
+  const priceVariation = Math.random() * 0.2 - 0.1; // +/- 10%
   const adjustedPrice = totalPrice * (1 + priceVariation);
   
-  // Generate 2-4 mock recent sales
+  // Generate 2-4 mock recent sales with realistic data
   const salesCount = Math.floor(Math.random() * 3) + 2;
   const recentSales = [];
   
+  const conditions = ["Like New", "Very Good", "Good", "Acceptable"];
+  
   for (let i = 0; i < salesCount; i++) {
-    const price = adjustedPrice * (0.9 + Math.random() * 0.2); // +/- 10% from adjusted price
+    const individualVariation = Math.random() * 0.2 - 0.1; // +/- 10% from average price
+    const price = adjustedPrice * (1 + individualVariation);
     const now = new Date();
-    const saleDate = new Date(now.setDate(now.getDate() - (i * 5))); // Past sales
+    const saleDate = new Date(now.setDate(now.getDate() - (i * 5 + Math.floor(Math.random() * 10))));
+    const condition = conditions[Math.floor(Math.random() * conditions.length)];
     
     recentSales.push({
-      title: `${series} Manga Set (${totalVolumes} volumes) - ${i % 2 === 0 ? 'Like New' : 'Good'} Condition`,
+      title: `${series} Manga Set (${totalVolumes} volumes) - ${condition} Condition`,
       price: parseFloat(price.toFixed(2)),
       endTime: saleDate.toISOString(),
-      url: `#mock-listing-${i}`
+      url: `#mock-listing-${i}`,
+      condition: condition
     });
   }
   
   return {
     averagePrice: parseFloat(adjustedPrice.toFixed(2)),
+    pricePerVolume: parseFloat((adjustedPrice / totalVolumes).toFixed(2)),
     priceTrend: parseFloat((Math.random() * 10 - 5).toFixed(1)), // -5% to +5%
     numberOfListings: salesCount,
-    recentSales
+    recentSales: recentSales,
+    source: 'mock' // Add source to indicate this is mock data
   };
 }
 
+// Export the functions
 module.exports = {
   searchCompletedMangaSets,
-  calculateMangaPrices,
-  fetchEbayPrices
+  getEbayAccessToken,
+  fetchEbayPrices,
+  calculateMangaPrices
 };

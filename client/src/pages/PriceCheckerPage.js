@@ -149,44 +149,52 @@ const PriceCheckerPage = () => {
                     <strong>{result.series}</strong> {result.volumes && `(Vol. ${result.volumes})`}
                   </div>
                   
-                  <div className="d-flex justify-between align-center mb-3">
-                    <span>Complete Set:</span>
-                    <span className="price-value">${result.data.averageSetPrice.toFixed(2)}</span>
-                  </div>
+                  {/* Handle missing data gracefully */}
+                  {result.data ? (
+                    <>
+                      <div className="d-flex justify-between align-center mb-3">
+                        <span>Complete Set:</span>
+                        <span className="price-value">${result.data.averageSetPrice?.toFixed(2) || 'N/A'}</span>
+                      </div>
+                      
+                      <div className="d-flex justify-between align-center mb-3">
+                        <span>Price Per Volume:</span>
+                        <span className="price-value">${result.data.pricePerVolume?.toFixed(2) || 'N/A'}</span>
+                      </div>
+                      
+                      <div className="d-flex justify-between align-center mb-4">
+                        <span>Recent Price Trend:</span>
+                        <span className={`${result.data.priceTrend > 0 ? 'text-success' : 'text-danger'}`}>
+                          {result.data.priceTrend > 0 ? '+' : ''}{result.data.priceTrend?.toFixed(1) || 'N/A'}%
+                        </span>
+                      </div>
+                      
+                      <div className="text-sm mb-2">
+                        Based on {result.data.numberOfListings || 'N/A'} recent sales
+                      </div>
+                    </>
+                  ) : (
+                    <div>No price data available. Please try again later.</div>
+                  )}
                   
-                  <div className="d-flex justify-between align-center mb-3">
-                    <span>Price Per Volume:</span>
-                    <span className="price-value">${result.data.pricePerVolume.toFixed(2)}</span>
-                  </div>
-                  
-                  <div className="d-flex justify-between align-center mb-4">
-                    <span>Recent Price Trend:</span>
-                    <span className={`${result.data.priceTrend > 0 ? 'text-success' : 'text-danger'}`}>
-                      {result.data.priceTrend > 0 ? '+' : ''}{result.data.priceTrend.toFixed(1)}%
-                    </span>
-                  </div>
-                  
-                  <div className="text-sm mb-2">
-                    Based on {result.data.numberOfListings} recent sales
-                  </div>
-                </div>
-                
-                {result.data.recentSales && result.data.recentSales.length > 0 && (
-                  <div className="mt-4">
-                    <h3 className="mb-3">Recent Sales</h3>
-                    <div className="recent-sales">
-                      {result.data.recentSales.map((sale, index) => (
-                        <div key={index} className="card mb-2 p-2">
-                          <div className="text-sm mb-1 text-truncate">{sale.title}</div>
-                          <div className="d-flex justify-between">
-                            <span>${sale.price.toFixed(2)}</span>
-                            <span className="text-sm">{new Date(sale.endTime).toLocaleDateString()}</span>
+                  {/* Display recent sales - FIXED this section to properly check for undefined values */}
+                  {result.data?.recentSales && result.data.recentSales.length > 0 && (
+                    <div className="mt-4">
+                      <h3 className="mb-3">Recent Sales</h3>
+                      <div className="recent-sales">
+                        {result.data.recentSales.map((sale, index) => (
+                          <div key={index} className="card mb-2 p-2">
+                            <div className="text-sm mb-1 text-truncate">{sale.title}</div>
+                            <div className="d-flex justify-between">
+                              <span>${sale.price?.toFixed(2) || 'N/A'}</span>
+                              <span className="text-sm">{sale.endTime ? new Date(sale.endTime).toLocaleDateString() : 'N/A'}</span>
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
             ) : (
               <div className="card p-4">
