@@ -14,13 +14,13 @@
   --success: #38b26a; /* Green for success states */
   --warning: #ffb347; /* Orange for warnings */
   --danger: #ff6b6b; /* Red for errors/alerts */
-  
+
   /* Neutral colors */
   --dark: #333333;
   --medium: #777777;
   --light: #f8f9fa;
   --white: #ffffff;
-  
+
   /* Spacing */
   --spacing-xs: 0.25rem;
   --spacing-sm: 0.5rem;
@@ -28,12 +28,12 @@
   --spacing-lg: 1.5rem;
   --spacing-xl: 2rem;
   --spacing-xxl: 3rem;
-  
+
   /* Border radius */
   --radius-sm: 0.25rem;
   --radius-md: 0.5rem;
   --radius-lg: 1rem;
-  
+
   /* Shadows */
   --shadow-sm: 0 1px 3px rgba(0,0,0,0.12);
   --shadow-md: 0 4px 6px rgba(0,0,0,0.1);
@@ -212,7 +212,7 @@ a:hover {
   .navbar-toggle {
     display: block;
   }
-  
+
   .navbar-menu {
     position: fixed;
     top: 60px;
@@ -228,11 +228,11 @@ a:hover {
     transition: transform 0.3s ease;
     box-shadow: var(--shadow-md);
   }
-  
+
   .navbar-menu.active {
     transform: translateX(0);
   }
-  
+
   .navbar-item {
     margin: var(--spacing-md) 0;
   }
@@ -522,8 +522,9 @@ a:hover {
 }
 /* Sell Collection Page Styles */
 .sell-hero {
-  background: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), 
-              url('C:\Users\alber\manga-market\client\public\images\manga-collection-bg.jpg');
+  background: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)),
+          /* CORRECTED PATH BELOW */
+          url('./assets/images/manga-collection-bg.jpg');
   background-size: cover;
   background-position: center;
   color: var(--white);
