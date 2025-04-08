@@ -1,7 +1,5 @@
-// server/index.js - UPDATED to include seriesRoutes
-
 const express = require('express');
-const cors = require('cors');
+const cors = require('cors'); // Make sure cors is installed (npm install cors)
 const dotenv = require('dotenv');
 const path = require('path'); // Import the 'path' module
 
@@ -14,8 +12,32 @@ const sequelize = require('./src/utils/database'); // Import sequelize
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// --- START CORS Configuration ---
+const allowedOrigins = [
+  'https://manga-markett.netlify.app', // Your deployed frontend URL
+  'http://localhost:3000'             // Your local frontend development URL (optional)
+];
+
+const corsOptions = {
+  origin: function (origin, callback) {
+    // Allow requests with no origin (like mobile apps, curl requests, or server-to-server)
+    // or if the origin is in the allowed list
+    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(new Error(`Origin '${origin}' not allowed by CORS`)); // More specific error
+    }
+  },
+  optionsSuccessStatus: 200 // For legacy browser compatibility
+};
+
+// Use configured CORS middleware
+app.use(cors(corsOptions));
+// --- END CORS Configuration ---
+
+
 // Middleware
-app.use(cors());
+// app.use(cors()); // REMOVE THIS LINE - Replaced by the configuration above
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -34,11 +56,9 @@ app.get('/', (req, res) => {
 });
 
 // Apply routes with prefixes
-// NOTE: Ensure the prefix here matches how you expect to call it from the frontend
-// If your api.js uses '/api' as baseURL and fetchSeries calls '/series', then '/api/series' is correct.
-app.use('/api', priceRoutes); // Handles routes defined within priceRoutes starting /api/...
-app.use('/api', notificationRoutes); // Handles routes defined within notificationRoutes starting /api/...
-app.use('/api/series', seriesRoutes); // *** ADD THIS LINE - Handles routes defined in seriesRoutes starting /api/series/... ***
+app.use('/api', priceRoutes);
+app.use('/api', notificationRoutes);
+app.use('/api/series', seriesRoutes);
 // *** Add other app.use calls if needed ***
 // app.use('/api/volumes', volumeRoutes);
 // app.use('/api/inventory', inventoryRoutes);
