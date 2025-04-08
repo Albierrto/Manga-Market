@@ -1,88 +1,102 @@
+// server/src/routes/priceRoutes.js
+
 const express = require('express');
 const router = express.Router();
-const ebayService = require('../services/ebayService');
+const pricingService = require('../services/pricingService'); // Use the service that uses the DB
+const { Series, Volume } = require('../models'); // Need Series model for lookup
+const { Op } = require('sequelize'); // For more complex queries if needed
 
-// GET /api/prices - Get manga prices from eBay
+// GET /api/prices - Get calculated manga prices based on DB data
 router.get('/prices', async (req, res) => {
   try {
-    const { series, volumes } = req.query;
+    const { seriesName, volumes, condition = 'good' } = req.query; // condition defaults to 'good'
 
-    if (!series || !volumes) {
-      return res.status(400).json({ message: 'Series name and volume range are required' });
+    if (!seriesName) {
+      return res.status(400).json({ success: false, message: 'Query parameter "seriesName" is required.' });
+    }
+    if (!volumes) {
+      return res.status(400).json({ success: false, message: 'Query parameter "volumes" is required (e.g., "1", "1-10", "1,3,5").' });
     }
 
-    // Call the eBay service function. It returns an object with keys "success" and "data"
-    const result = await ebayService.searchCompletedMangaSets(series, volumes);
-
-    // If no valid items returned, send back default data
-    if (!Array.isArray(result.data) || result.data.length === 0) {
-      return res.status(200).json({
-        success: true,
-        series,
-        volumes,
-        data: {
-          averageSetPrice: 0,
-          pricePerVolume: 0,
-          priceTrend: 0,
-          numberOfListings: 0,
-          recentSales: []
-        }
-      });
-    }
-
-    // Helper function to safely extract the price from an item.
-    // It first checks if a "price" property exists (from fallback/mock data).
-    // Otherwise, it attempts to get the price from the eBay response structure.
-    function extractPrice(item) {
-      if (item.price) {
-        return parseFloat(item.price);
-      } else if (
-        item.sellingStatus &&
-        Array.isArray(item.sellingStatus) &&
-        item.sellingStatus[0] &&
-        item.sellingStatus[0].convertedCurrentPrice &&
-        Array.isArray(item.sellingStatus[0].convertedCurrentPrice) &&
-        item.sellingStatus[0].convertedCurrentPrice[0] &&
-        item.sellingStatus[0].convertedCurrentPrice[0].__value__
-      ) {
-        return parseFloat(item.sellingStatus[0].convertedCurrentPrice[0].__value__);
-      }
-      return 0;
-    }
-
-    // Sum up the prices from each item
-    const totalPrice = result.data.reduce((sum, item) => {
-      return sum + extractPrice(item);
-    }, 0);
-
-    // Calculate average set price
-    const averageSetPrice = totalPrice / result.data.length;
-
-    // Determine number of volumes from the volume range (e.g. "1-10")
-    const volumeParts = volumes.split('-');
-    let volumeCount = 1;
-    if (volumeParts.length === 2) {
-      volumeCount = parseInt(volumeParts[1]) - parseInt(volumeParts[0]) + 1;
-    }
-
-    // Calculate price per volume
-    const pricePerVolume = averageSetPrice / volumeCount;
-
-    res.json({
-      success: true,
-      series,
-      volumes,
-      data: {
-        averageSetPrice,
-        pricePerVolume,
-        priceTrend: 5.0, // Mock trend; update with real logic as needed
-        numberOfListings: result.data.length,
-        recentSales: result.data
-      }
+    // 1. Find the Series ID based on the name
+    const series = await Series.findOne({
+      where: {
+        // Use case-insensitive matching if needed, depends on your DB collation
+        // name: { [Op.iLike]: seriesName } // For PostgreSQL iLike
+        name: seriesName // Adjust if case-sensitive matching is okay
+       }
     });
+
+    if (!series) {
+      return res.status(404).json({ success: false, message: `Series "${seriesName}" not found in the database.` });
+    }
+    const seriesId = series.series_id;
+    const totalVolumesInSeries = series.total_volumes;
+
+    let priceData = {};
+    let calculationType = 'unknown';
+
+    // 2. Parse the 'volumes' parameter and call the appropriate pricing service function
+    if (/^\d+$/.test(volumes)) {
+      // Single volume (e.g., "5")
+      calculationType = 'single_volume';
+      const volumeNum = parseInt(volumes, 10);
+      // Check if it's the complete set (only 1 volume total)
+      const isComplete = totalVolumesInSeries === 1 && volumeNum === 1;
+       // Use estimateMangaSetPrice for a single volume range
+      priceData = await pricingService.estimateMangaSetPrice(seriesId, volumeNum, volumeNum, condition, isComplete);
+
+    } else if (/^\d+-\d+$/.test(volumes)) {
+      // Volume range (e.g., "1-10")
+      calculationType = 'volume_range';
+      const [startVol, endVol] = volumes.split('-').map(Number);
+      if (startVol >= endVol || startVol < 1) {
+         return res.status(400).json({ success: false, message: 'Invalid volume range format or values.' });
+      }
+      // Check if the range represents the complete set
+      const isComplete = startVol === 1 && endVol === totalVolumesInSeries;
+      priceData = await pricingService.estimateMangaSetPrice(seriesId, startVol, endVol, condition, isComplete);
+
+    } else if (/^(\d+,)*\d+$/.test(volumes)) {
+      // Comma-separated list of volumes (e.g., "1,3,5")
+      calculationType = 'volume_list';
+      const volumeList = volumes.split(',').map(Number).sort((a, b) => a - b);
+      if (volumeList.some(isNaN) || volumeList.length === 0) {
+         return res.status(400).json({ success: false, message: 'Invalid volume list format.' });
+      }
+      priceData = await pricingService.calculatePriceWithMissingVolumes(seriesId, volumeList, condition);
+
+    } else {
+       return res.status(400).json({ success: false, message: 'Invalid "volumes" query parameter format. Use "1", "1-10", or "1,3,5".' });
+    }
+
+    // Optionally, get trend data
+    const trendData = await pricingService.calculatePriceTrend(seriesId);
+
+    // 3. Send the response
+    res.status(200).json({
+      success: true,
+      series: {
+          id: seriesId,
+          name: series.name,
+          totalVolumes: totalVolumesInSeries
+      },
+      query: {
+          volumes: volumes,
+          condition: condition,
+          type: calculationType
+      },
+      pricing: priceData, // Contains estimatedPrice, pricePerVolume, etc. from the service
+      trend: trendData
+    });
+
   } catch (error) {
-    console.error('Price check error:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    console.error('Error in /api/prices route:', error);
+    res.status(500).json({
+        success: false,
+        message: 'Internal server error while calculating prices.',
+        error: error.message // Provide error message in development?
+    });
   }
 });
 
