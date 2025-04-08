@@ -11,10 +11,10 @@ router.get('/prices', async (req, res) => {
       return res.status(400).json({ message: 'Series name and volume range are required' });
     }
 
-    // Call the eBay service function.
+    // Call the eBay service function. It returns an object with keys "success" and "data"
     const result = await ebayService.searchCompletedMangaSets(series, volumes);
 
-    // Check if there are any items returned
+    // If no valid items returned, send back default data
     if (!Array.isArray(result.data) || result.data.length === 0) {
       return res.status(200).json({
         success: true,
@@ -30,16 +30,35 @@ router.get('/prices', async (req, res) => {
       });
     }
 
-    // Calculate total price by parsing the price from each item's sellingStatus field
+    // Helper function to safely extract the price from an item.
+    // It first checks if a "price" property exists (from fallback/mock data).
+    // Otherwise, it attempts to get the price from the eBay response structure.
+    function extractPrice(item) {
+      if (item.price) {
+        return parseFloat(item.price);
+      } else if (
+        item.sellingStatus &&
+        Array.isArray(item.sellingStatus) &&
+        item.sellingStatus[0] &&
+        item.sellingStatus[0].convertedCurrentPrice &&
+        Array.isArray(item.sellingStatus[0].convertedCurrentPrice) &&
+        item.sellingStatus[0].convertedCurrentPrice[0] &&
+        item.sellingStatus[0].convertedCurrentPrice[0].__value__
+      ) {
+        return parseFloat(item.sellingStatus[0].convertedCurrentPrice[0].__value__);
+      }
+      return 0;
+    }
+
+    // Sum up the prices from each item
     const totalPrice = result.data.reduce((sum, item) => {
-      const price = parseFloat(item.sellingStatus[0].convertedCurrentPrice[0].__value__) || 0;
-      return sum + price;
+      return sum + extractPrice(item);
     }, 0);
 
-    // Compute average set price
+    // Calculate average set price
     const averageSetPrice = totalPrice / result.data.length;
 
-    // Determine the number of volumes from the provided volume range (e.g., "1-10")
+    // Determine number of volumes from the volume range (e.g. "1-10")
     const volumeParts = volumes.split('-');
     let volumeCount = 1;
     if (volumeParts.length === 2) {
@@ -56,7 +75,7 @@ router.get('/prices', async (req, res) => {
       data: {
         averageSetPrice,
         pricePerVolume,
-        priceTrend: 5.0, // This is a mocked trend value; update as needed
+        priceTrend: 5.0, // Mock trend; update with real logic as needed
         numberOfListings: result.data.length,
         recentSales: result.data
       }

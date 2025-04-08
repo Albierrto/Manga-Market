@@ -577,6 +577,173 @@ input[type="file"].form-control {
   transform: translateY(-3px);
   box-shadow: 0 4px 8px rgba(0,0,0,0.1);
 }
+/* Add these to your client/src/index.css file */
+
+/* Add these styles to your client/src/index.css file */
+
+/* Series Detail Page Styles */
+.volumes-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.volume-card {
+  border: 1px solid #eee;
+  border-radius: var(--radius-md);
+  padding: 1rem;
+  text-align: center;
+  transition: all 0.3s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-decoration: none;
+  color: var(--dark);
+  background-color: var(--white);
+}
+
+.volume-card:hover {
+  transform: translateY(-5px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.volume-number {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.volume-info {
+  font-size: 0.8rem;
+  color: var(--medium);
+}
+
+/* Volume Detail Page Styles */
+.detail-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid #eee;
+}
+
+.detail-label {
+  font-weight: 500;
+  color: var(--medium);
+}
+
+.detail-value {
+  font-weight: 600;
+}
+
+.breadcrumb {
+  display: flex;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  color: var(--medium);
+  margin-bottom: 1.5rem;
+}
+
+.breadcrumb a {
+  color: var(--primary);
+  text-decoration: none;
+}
+
+.breadcrumb a:hover {
+  text-decoration: underline;
+}
+
+/* Badge styles */
+.badge {
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  line-height: 1;
+  text-align: center;
+  white-space: nowrap;
+  vertical-align: baseline;
+  border-radius: var(--radius-sm);
+}
+
+.bg-primary {
+  background-color: var(--primary);
+  color: var(--white);
+}
+
+.bg-success {
+  background-color: var(--success);
+  color: var(--white);
+}
+
+.bg-warning {
+  background-color: var(--warning);
+  color: var(--dark);
+}
+
+.bg-light {
+  background-color: var(--light);
+  color: var(--dark);
+}
+
+.text-primary {
+  color: var(--primary) !important;
+}
+
+.text-success {
+  color: var(--success) !important;
+}
+
+.text-danger {
+  color: var(--danger) !important;
+}
+
+.font-weight-bold {
+  font-weight: 700 !important;
+}
+
+/* Fix for card styling in series pages */
+.overflow-hidden {
+  overflow: hidden;
+}
+
+.w-100 {
+  width: 100%;
+}
+
+.p-0 {
+  padding: 0 !important;
+}
+
+/* Utilities for spacing and layout */
+.mx-2 {
+  margin-left: 0.5rem !important;
+  margin-right: 0.5rem !important;
+}
+
+.mr-2 {
+  margin-right: 0.5rem !important;
+}
+
+.my-4 {
+  margin-top: 1rem !important;
+  margin-bottom: 1rem !important;
+}
+
+.mt-4 {
+  margin-top: 1rem !important;
+}
+
+.mt-5 {
+  margin-top: 1.5rem !important;
+}
+
+.gap-2 {
+  gap: 0.5rem !important;
+}
 /* Utilities */
 .text-center { text-align: center; }
 .text-right { text-align: right; }

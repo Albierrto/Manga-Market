@@ -1,3 +1,4 @@
+// client/src/pages/HomePage.js - Update the featuredSeries section
 import React from 'react';
 import { Link } from 'react-router-dom';
 
@@ -43,6 +44,19 @@ const HomePage = () => {
     'Naruto', 'One Piece', 'Demon Slayer', 'Attack on Titan',
     'My Hero Academia', 'Dragon Ball', 'Jujutsu Kaisen', 'Hunter x Hunter'
   ];
+
+  // Map popular series to ids for linking
+  const seriesNameToId = {
+    'Naruto': 1,
+    'One Piece': 2,
+    'Demon Slayer': 3,
+    'My Hero Academia': 4,
+    'Death Note': 5,
+    'Attack on Titan': 6,
+    'Dragon Ball': 7,
+    'Jujutsu Kaisen': 8,
+    'Hunter x Hunter': 9
+  };
 
   return (
     <>
@@ -99,20 +113,24 @@ const HomePage = () => {
               <div key={series.id} className="col-3 col-md-6 col-sm-12 mb-4">
                 <div className="card manga-card">
                   <div className="manga-card-header">
-                    <img src={series.image} alt={series.title} className="manga-card-img" />
+                    <Link to={`/series/${series.id}`}>
+                      <img src={series.image} alt={series.title} className="manga-card-img" />
+                    </Link>
                     {series.isComplete && (
                       <span className="manga-card-badge">Complete Set</span>
                     )}
                   </div>
                   <div className="manga-card-body">
-                    <h3 className="manga-card-title">{series.title}</h3>
+                    <Link to={`/series/${series.id}`} style={{ textDecoration: 'none', color: 'inherit' }}>
+                      <h3 className="manga-card-title">{series.title}</h3>
+                    </Link>
                     <div className="manga-card-details">Volumes: {series.volumes}</div>
                     <div className="manga-card-details">Condition: {series.condition}</div>
                     {/* No price displayed - will be populated from eBay API later */}
                   </div>
                   <div className="card-footer">
                     <Link to={`/series/${series.id}`} className="btn btn-sm">View Details</Link>
-                    <Link to="/price-checker" className="btn btn-secondary btn-sm">Check Price</Link>
+                    <Link to={`/price-checker?series=${series.id}`} className="btn btn-secondary btn-sm">Check Price</Link>
                   </div>
                 </div>
               </div>
@@ -132,7 +150,7 @@ const HomePage = () => {
             {popularSeries.map((series, index) => (
               <Link 
                 key={index} 
-                to={`/series/${series.toLowerCase().replace(/ /g, '-')}`}
+                to={`/series/${seriesNameToId[series] || index + 1}`}
                 className="btn"
               >
                 {series}

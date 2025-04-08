@@ -17,6 +17,9 @@ export const getMangaPrices = (series, volumes, totalVolumes) => {
   });
 };
 
+// Get volume by ID
+export const fetchVolumeById = (id) => api.get(`/volumes/${id}`);
+
 // Series API
 export const fetchSeries = () => api.get('/series');
 export const fetchSeriesById = (id) => api.get(`/series/${id}`);
