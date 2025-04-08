@@ -9,7 +9,7 @@ import myHeroAcademiaImg from '../assets/images/myheroacademia.jpg';
 import deathNoteImg from '../assets/images/deathnote.jpg';
 import attackOnTitanImg from '../assets/images/attackontitan.jpg';
 
-// Image mapping for easy reference
+// eslint-disable-next-line no-unused-vars
 const seriesImages = {
   'Naruto': narutoImg,
   'One Piece': onePieceImg,
@@ -83,7 +83,6 @@ const SeriesDetailPage = () => {
                   <span className="badge bg-light text-dark">{series.volumes} volumes</span>
                 </div>
                 
-                {/* Rest of the component remains the same */}
                 <div className="price-info my-4">
                   <div className="d-flex justify-between mb-2">
                     <span>Average Volume Price:</span>
@@ -99,7 +98,6 @@ const SeriesDetailPage = () => {
                   </div>
                 </div>
                 
-                {/* Existing buttons */}
                 <Link to={`/price-checker?series=${id}`} className="btn btn-block mb-2">
                   Check Current Prices
                 </Link>
@@ -110,7 +108,12 @@ const SeriesDetailPage = () => {
             </div>
           </div>
           
-          {/* Remaining columns stay the same */}
+          <div className="col-8 col-md-12">
+            <div className="card p-4 mb-4">
+              <h2 className="mb-3">Series Summary</h2>
+              <p style={{ lineHeight: 1.6 }}>{series.summary}</p>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -129,7 +132,7 @@ function getMockSeriesData(id) {
       averagePrice: 8.99,
       completeSetPrice: 599.99,
       premium: 0.15,
-      image: narutoImg, // Use imported image
+      image: narutoImg,
       summary: 'Naruto follows the journey of Naruto Uzumaki, a young ninja who seeks to gain recognition from his peers and dreams of becoming the Hokage, the leader of his village.'
     },
     2: {
@@ -141,7 +144,7 @@ function getMockSeriesData(id) {
       averagePrice: 9.99,
       completeSetPrice: 920.50,
       premium: 0.18,
-      image: onePieceImg, // Use imported image
+      image: onePieceImg,
       summary: 'One Piece follows Monkey D. Luffy, a young man whose body gained the properties of rubber after unintentionally eating a Devil Fruit. With his crew of pirates, named the Straw Hat Pirates, Luffy explores the Grand Line in search of the world\'s ultimate treasure known as "One Piece" to become the next Pirate King.'
     },
     3: {
@@ -153,7 +156,7 @@ function getMockSeriesData(id) {
       averagePrice: 9.99,
       completeSetPrice: 210.75,
       premium: 0.12,
-      image: demonSlayerImg, // Use imported image
+      image: demonSlayerImg,
       summary: 'Demon Slayer: Kimetsu no Yaiba tells the story of Tanjiro Kamado, a kind-hearted teenager who becomes a demon slayer after his family is slaughtered by demons and his sister Nezuko is turned into one.'
     },
     4: {
@@ -165,7 +168,7 @@ function getMockSeriesData(id) {
       averagePrice: 9.99,
       completeSetPrice: 310.25,
       premium: 0.14,
-      image: myHeroAcademiaImg, // Use imported image
+      image: myHeroAcademiaImg,
       summary: 'My Hero Academia is set in a world where superpowers (called "Quirks") have become commonplace. The story follows Izuku Midoriya, a boy who was born without a Quirk but still dreams of becoming a superhero himself.'
     },
     5: {
@@ -177,7 +180,7 @@ function getMockSeriesData(id) {
       averagePrice: 9.99,
       completeSetPrice: 105.50,
       premium: 0.10,
-      image: deathNoteImg, // Use imported image
+      image: deathNoteImg,
       summary: 'Death Note follows Light Yagami, a high school student who discovers a supernatural notebook, the "Death Note", which grants its user the ability to kill anyone whose name and face they know by writing the name in the notebook.'
     },
     6: {
@@ -189,7 +192,7 @@ function getMockSeriesData(id) {
       averagePrice: 10.99,
       completeSetPrice: 340.99,
       premium: 0.15,
-      image: attackOnTitanImg, // Use imported image
+      image: attackOnTitanImg,
       summary: 'Attack on Titan is set in a world where humanity lives within cities surrounded by enormous walls due to the Titans, gigantic humanoid creatures who devour humans seemingly without reason.'
     }
   };
