@@ -1,37 +1,28 @@
-// server/src/utils/database.js - CORRECTED dotenv path loading (AGAIN!)
-
+// server/src/utils/database.js
 const { Sequelize } = require('sequelize');
-const path = require('path'); // Import path module
+const path = require('path'); 
 
-// **MODIFIED**: Load .env file from the PARENT directory (THREE levels up from src/utils)
-require('dotenv').config({ path: path.join(__dirname, '..', '..', '..', '.env') }); // <-- CORRECTED PATH
+// Load .env file from the parent directory
+require('dotenv').config({ path: path.join(__dirname, '..', '..', '..', '.env') });
 
-// Log loaded variables for debugging (optional, remove in production)
-// console.log('DB_HOST:', process.env.DB_HOST);
-// console.log('DB_PORT:', process.env.DB_PORT);
-// console.log('DB_NAME:', process.env.DB_NAME);
-// console.log('DB_USER:', process.env.DB_USER);
-// console.log('DB_PASSWORD:', process.env.DB_PASSWORD ? '******' : 'Not Loaded');
-
-// Create Sequelize instance using environment variables or defaults
-const sequelize = new Sequelize(
-  process.env.DB_NAME || 'manga_market',
-  process.env.DB_USER || 'postgres',
-  process.env.DB_PASSWORD || 'your_password', // Default fallback if not in .env
-  {
-    host: process.env.DB_HOST || 'localhost',
-    port: process.env.DB_PORT || 5432,
-    dialect: 'postgres',
-    logging: process.env.NODE_ENV === 'development' ? console.log : false,
-    pool: {
-      max: 5,
-      min: 0,
-      idle: 10000
+// Create Sequelize instance using Render PostgreSQL connection string
+const sequelize = new Sequelize(process.env.DATABASE_URL || 'postgresql://manga_market_alberto:7CiLWrQwWbWAjMuvaXyEyE2dMjdhWJv4@dpg-cvqbbgeuk2gs73d1js8g-a.virginia-postgres.render.com/manga_market_db', {
+  dialect: 'postgres',
+  dialectOptions: {
+    ssl: {
+      require: true,
+      rejectUnauthorized: false
     }
+  },
+  logging: process.env.NODE_ENV === 'development' ? console.log : false,
+  pool: {
+    max: 5,
+    min: 0,
+    idle: 10000
   }
-);
+});
 
-// Test the connection (Optional - can be removed if done elsewhere)
+// Test the connection
 const testConnection = async () => {
   try {
     await sequelize.authenticate();
@@ -41,7 +32,7 @@ const testConnection = async () => {
   }
 };
 
-// Optional: Call testConnection immediately if desired, e.g., when module loads
+// Uncomment to test connection when module loads
 // testConnection();
 
-module.exports = sequelize; // Export the configured instance
+module.exports = sequelize;

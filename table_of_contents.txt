@@ -1,0 +1,53 @@
+Table of Contents / File Manifest for Manga-Market Project
+-----------------------------------------------------------
+
+/.env.example           - Example Environment Variables File
+/.gitignore             - Git Ignore Rules File
+/README.md              - Project Readme File (Markdown)
+
+/client/                - Frontend Application Folder (React)
+  client/package.json   - Frontend Dependencies/Scripts (JSON)
+  client/public/        - Frontend Public Assets Folder
+    client/public/index.html - Main HTML File
+    client/public/_redirects   - Netlify Redirect Rules File
+    client/public/favicon.ico - Favicon Image File
+  client/src/           - Frontend Source Code Folder
+    client/src/App.js       - Main React Application Component (JavaScript)
+    client/src/index.css    - Main CSS Stylesheet
+    client/src/index.js     - React Entry Point (JavaScript)
+    client/src/api.js       - Frontend API Client Setup (JavaScript)
+    client/src/assets/      - Frontend Static Assets Folder
+      client/src/assets/images/ - Frontend Image Assets Folder
+        client/src/assets/images/naruto.jpg - Image File (JPEG)
+        client/src/assets/images/onepiece.jpg - Image File (JPEG)
+        client/src/assets/images/manga-collection-bg.jpg - Image File (JPEG)
+        ... (other images) ...
+    client/src/pages/       - Frontend Page Components Folder (JavaScript)
+      client/src/pages/HomePage.js - Home Page Component (JavaScript)
+      client/src/pages/VolumeDetailPage.js - Volume Detail Page (JavaScript)
+      ... (other pages) ...
+    client/src/components/  - Reusable Frontend Components Folder
+    client/src/services/    - Frontend Service Logic Folder
+
+/server/                - Backend Application Folder (Node.js/Express)
+  server/package.json   - Backend Dependencies/Scripts (JSON)
+  server/.sequelizerc   - Sequelize CLI Configuration File
+  server/config/        - Sequelize Configuration Folder
+    server/config/config.json - Sequelize Database Configuration (JSON)
+  server/migrations/    - Sequelize Database Migrations Folder
+    server/migrations/...-create-series-table.js - Database Migration File (JavaScript)
+    ... (other migration files) ...
+  server/models/        - Sequelize Models Folder (If generated)
+    server/models/index.js - Sequelize Model Loader (JavaScript)
+    server/models/series.js - Series Model Definition (JavaScript)
+    ... (other models) ...
+  server/src/           - Backend Source Code Folder
+    server/src/index.js     - Main Backend Server File (JavaScript)
+    server/src/routes/      - Backend Route Definitions Folder
+      server/src/routes/apiRoutes.js - Combined API Router (JavaScript)
+      server/src/routes/priceRoutes.js - Pricing API Routes (JavaScript)
+      server/src/routes/seriesRoutes.js - Series API Routes (JavaScript)
+    server/src/services/    - Backend Service Logic Folder
+      server/src/services/pricingService.js - Pricing Logic (JavaScript)
+    server/src/utils/       - Backend Utilities Folder
+      server/src/utils/database.js - Database Connection Setup (JavaScript)
