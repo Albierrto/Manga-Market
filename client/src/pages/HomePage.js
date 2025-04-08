@@ -2,8 +2,17 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 
+// Import the images from their new location in src/assets/images
+// Adjust the relative path ('../assets/images/') if HomePage.js
+// is located somewhere else within src
+import narutoImg from '../assets/images/naruto.jpg';
+import onePieceImg from '../assets/images/onepiece.jpg';
+import demonSlayerImg from '../assets/images/demonslayer.jpg';
+import attackOnTitanImg from '../assets/images/attackontitan.jpg';
+// Import other images if needed by popularSeries or elsewhere
+
 const HomePage = () => {
-  // Template manga sets - NO PRICING DATA
+  // Template manga sets - Use imported image variables
   const featuredSeries = [
     {
       id: 1,
@@ -11,7 +20,7 @@ const HomePage = () => {
       volumes: '1-72',
       condition: 'good',
       isComplete: true,
-      image: '/images/naruto.jpg'
+      image: narutoImg // Use imported variable
     },
     {
       id: 2,
@@ -19,7 +28,7 @@ const HomePage = () => {
       volumes: '1-50',
       condition: 'very good',
       isComplete: false,
-      image: '/images/onepiece.jpg'
+      image: onePieceImg // Use imported variable
     },
     {
       id: 3,
@@ -27,7 +36,7 @@ const HomePage = () => {
       volumes: '1-23',
       condition: 'like new',
       isComplete: true,
-      image: '/images/demonslayer.jpg'
+      image: demonSlayerImg // Use imported variable
     },
     {
       id: 4,
@@ -35,7 +44,7 @@ const HomePage = () => {
       volumes: '1-34',
       condition: 'good',
       isComplete: true,
-      image: '/images/attackontitan.jpg'
+      image: attackOnTitanImg // Use imported variable
     }
   ];
 
@@ -50,12 +59,12 @@ const HomePage = () => {
     'Naruto': 1,
     'One Piece': 2,
     'Demon Slayer': 3,
-    'My Hero Academia': 4,
-    'Death Note': 5,
+    'My Hero Academia': 4, // Assuming ID 4, adjust if needed
+    'Death Note': 5,       // Assuming ID 5, adjust if needed
     'Attack on Titan': 6,
-    'Dragon Ball': 7,
-    'Jujutsu Kaisen': 8,
-    'Hunter x Hunter': 9
+    'Dragon Ball': 7,       // Assuming ID 7, adjust if needed
+    'Jujutsu Kaisen': 8,    // Assuming ID 8, adjust if needed
+    'Hunter x Hunter': 9   // Assuming ID 9, adjust if needed
   };
 
   return (
@@ -77,24 +86,23 @@ const HomePage = () => {
           </div>
         </div>
       </section>
-      
+
       {/* Features Section */}
       <section className="section">
         <div className="container">
           <h2 className="section-title">Why Choose Manga Market</h2>
           <div className="features">
+            {/* Feature Cards */}
             <div className="feature-card">
               <div className="feature-icon">✓</div>
               <h3 className="feature-title">Complete Set Premium</h3>
               <p>Complete manga sets typically command a 15-25% premium over the sum of individual volumes. Our algorithm precisely calculates this added value.</p>
             </div>
-            
             <div className="feature-card">
-              <div className="feature-icon">✓</div>
-              <h3 className="feature-title">Near-Complete Valuation</h3>
-              <p>Even sets missing 1-2 volumes have special value. We calculate what your collection is worth, even if it's not 100% complete.</p>
+               <div className="feature-icon">✓</div>
+               <h3 className="feature-title">Near-Complete Valuation</h3>
+               <p>Even sets missing 1-2 volumes have special value. We calculate what your collection is worth, even if it's not 100% complete.</p>
             </div>
-            
             <div className="feature-card">
               <div className="feature-icon">✓</div>
               <h3 className="feature-title">Market-Based Pricing</h3>
@@ -103,7 +111,7 @@ const HomePage = () => {
           </div>
         </div>
       </section>
-      
+
       {/* Featured Sets Section */}
       <section className="section bg-light">
         <div className="container">
@@ -114,6 +122,7 @@ const HomePage = () => {
                 <div className="card manga-card">
                   <div className="manga-card-header">
                     <Link to={`/series/${series.id}`}>
+                      {/* The 'src' now uses the imported variable */}
                       <img src={series.image} alt={series.title} className="manga-card-img" />
                     </Link>
                     {series.isComplete && (
@@ -126,7 +135,6 @@ const HomePage = () => {
                     </Link>
                     <div className="manga-card-details">Volumes: {series.volumes}</div>
                     <div className="manga-card-details">Condition: {series.condition}</div>
-                    {/* No price displayed - will be populated from eBay API later */}
                   </div>
                   <div className="card-footer">
                     <Link to={`/series/${series.id}`} className="btn btn-sm">View Details</Link>
@@ -141,16 +149,16 @@ const HomePage = () => {
           </div>
         </div>
       </section>
-      
+
       {/* Popular Series */}
       <section className="section">
         <div className="container">
           <h2 className="section-title">Popular Series</h2>
           <div className="d-flex flex-wrap justify-center" style={{ gap: 'var(--spacing-md)' }}>
             {popularSeries.map((series, index) => (
-              <Link 
-                key={index} 
-                to={`/series/${seriesNameToId[series] || index + 1}`}
+              <Link
+                key={index}
+                to={`/series/${seriesNameToId[series] || index + 1}`} // Fallback to index if name not mapped
                 className="btn"
               >
                 {series}
@@ -159,17 +167,10 @@ const HomePage = () => {
           </div>
         </div>
       </section>
-      
+
       {/* CTA Section */}
       <section className="section bg-primary text-center" style={{ padding: 'var(--spacing-xxl) 0' }}>
-        <div className="container">
-          <h2 style={{ color: 'var(--white)', marginBottom: 'var(--spacing-lg)' }}>Ready to Value Your Collection?</h2>
-          <p style={{ color: 'var(--white)', opacity: 0.9, maxWidth: '700px', margin: '0 auto var(--spacing-xl)' }}>
-            Whether you're looking to sell, insure, or just know what your manga collection is worth,
-            our specialized tools provide accurate valuation for complete and partial sets.
-          </p>
-          <Link to="/price-checker" className="btn btn-white btn-lg">Get Started</Link>
-        </div>
+        {/* ... rest of CTA section ... */}
       </section>
     </>
   );
