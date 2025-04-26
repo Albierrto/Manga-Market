@@ -55,7 +55,7 @@ const PriceCheckerPage = () => {
     const volumes = (startVol === endVol) ? `${startVol}` : `${startVol}-${endVol}`;
 
     try {
-      // Call API service with the updated function and parameter structure
+      // Call API service with the updated parameters structure
       const response = await getMangaPrices({
         seriesName: formData.series,
         volumes: volumes,

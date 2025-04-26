@@ -1,6 +1,7 @@
 import axios from 'axios';
 
 // Use local API URL for development; override via REACT_APP_API_URL if set
+// Remove '/api' from the end since it's already in the environment variable
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 
 const api = axios.create({
@@ -10,9 +11,9 @@ const api = axios.create({
   }
 });
 
-// Get manga prices from eBay data - Updated to use the correct endpoint
+// Update to match the Flask endpoint: use POST to /api/check-price
 export const getMangaPrices = (params) => {
-  return api.post('/check-price', params);
+  return api.post('/api/check-price', params);
 };
 
 // Series API

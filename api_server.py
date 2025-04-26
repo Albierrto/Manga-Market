@@ -2,7 +2,7 @@
 
 import os
 import traceback
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, Blueprint
 from flask_cors import CORS # Import CORS
 
 # Import the refactored scraper logic and DB query function
@@ -10,16 +10,27 @@ from manga_scraper_logic import run_scrape, get_avg_price_from_db, get_db_connec
 
 # Initialize Flask app
 app = Flask(__name__)
-CORS(app) # Enable CORS for all routes, allowing requests from your frontend
+CORS(app, origins=["https://manga-market.netlify.app", "http://localhost:3000"]) # Specify allowed origins
+
+# Create API blueprint with prefix
+api_bp = Blueprint('api', __name__, url_prefix='/api')
+
+# --- API Test Endpoint ---
+@api_bp.route('/test', methods=['GET'])
+def test_endpoint():
+    """
+    Simple test endpoint to verify API connectivity
+    """
+    return jsonify({"success": True, "message": "API is connected and running!"})
 
 # --- API Endpoint to Trigger Scrape and Get Price ---
-@app.route('/check-price', methods=['POST'])
+@api_bp.route('/check-price', methods=['POST'])
 def check_manga_price():
     """
     API endpoint that receives manga details, triggers a scrape,
     and returns the calculated average price from the database.
     """
-    print("[API] Received /check-price request")
+    print("[API] Received /api/check-price request")
     # Get data from the incoming JSON request from the frontend
     data = request.json
     if not data:
@@ -113,14 +124,13 @@ def check_manga_price():
         traceback.print_exc()
         return jsonify({"success": False, "message": "An internal server error occurred."}), 500
 
-# --- API Endpoint for Compatability with Frontend's GET Request ---
-@app.route('/api/prices', methods=['GET'])
+# --- API Endpoint for Compatibility with Frontend's GET Request ---
+@api_bp.route('/prices', methods=['GET'])
 def get_manga_prices():
     """
     Compatibility endpoint for frontend's GET request
-    Redirects to the POST-based check-price endpoint
     """
-    print("[API] Received /api/prices GET request - redirecting to POST endpoint")
+    print("[API] Received /api/prices GET request")
     
     # Extract params from query string
     series = request.args.get('series')
@@ -130,16 +140,31 @@ def get_manga_prices():
     if not series:
         return jsonify({"success": False, "message": "Missing 'series' parameter"}), 400
     
-    # Create a data payload for the POST endpoint
+    # Create a data payload for the POST handler
     data = {
         "seriesName": series,
         "volumes": volumes,
         "condition": condition
     }
     
+    # Set the request data for the check_manga_price function
+    request.json = data
+    
     # Call the POST endpoint function directly with the data
-    # This avoids having to duplicate logic
     return check_manga_price()
+
+# Register the blueprint
+app.register_blueprint(api_bp)
+
+# Add a root route to redirect to API test endpoint
+@app.route('/')
+def root():
+    return jsonify({
+        "name": "Manga Market API",
+        "version": "1.0.0",
+        "status": "running",
+        "test_endpoint": "/api/test"
+    })
 
 # --- Run the Flask Server ---
 if __name__ == '__main__':
