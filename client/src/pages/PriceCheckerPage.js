@@ -1,13 +1,12 @@
 import React, { useState } from 'react';
-// Assuming getMangaPrices is updated as shown in Step 2
+// Import the updated getMangaPrices function
 import { getMangaPrices } from '../services/api';
 
 const PriceCheckerPage = () => {
   const [formData, setFormData] = useState({
     series: '',
-    startVolume: '', // Allow empty start volume initially
+    startVolume: '',
     endVolume: '',
-    // totalVolumes is no longer needed for the API call
     condition: 'good'
   });
 
@@ -51,21 +50,19 @@ const PriceCheckerPage = () => {
         return;
     }
 
-
     // Construct the 'volumes' query parameter string
-    // Handles single volume or range. Add logic for lists if needed.
+    // Handles single volume or range
     const volumes = (startVol === endVol) ? `${startVol}` : `${startVol}-${endVol}`;
 
     try {
-      // Call API service with correctly named parameters
+      // Call API service with the updated function and parameter structure
       const response = await getMangaPrices({
         seriesName: formData.series,
         volumes: volumes,
         condition: formData.condition
       });
 
-      // The actual data is expected directly in response.data based on backend route
-      setResult(response.data); // Assuming API returns the whole structure { success: true, series: {...}, query: {...}, etc. }
+      setResult(response.data); // This now expects the structure from our updated API response
 
     } catch (err) {
       console.error('Error fetching price data:', err);
@@ -78,7 +75,7 @@ const PriceCheckerPage = () => {
     }
   };
 
-  // Helper to format currency - **MODIFIED**
+  // Helper to format currency
   const formatCurrency = (value) => {
     // First, try to convert the incoming value to a floating-point number
     const numValue = parseFloat(value);
@@ -91,16 +88,15 @@ const PriceCheckerPage = () => {
     return `$${numValue.toFixed(2)}`;
   };
 
-
   // Helper to format trend
-   const formatTrend = (value) => {
-     // Also good practice to parseFloat here too
-     const numValue = parseFloat(value);
-     if (numValue === null || numValue === undefined || isNaN(numValue)) {
-       return 'N/A';
-     }
-     return `${numValue > 0 ? '+' : ''}${numValue.toFixed(1)}%`;
-   };
+  const formatTrend = (value) => {
+    // Also good practice to parseFloat here too
+    const numValue = parseFloat(value);
+    if (numValue === null || numValue === undefined || isNaN(numValue)) {
+      return 'N/A';
+    }
+    return `${numValue > 0 ? '+' : ''}${numValue.toFixed(1)}%`;
+  };
 
   return (
     <div className="section">
@@ -130,7 +126,7 @@ const PriceCheckerPage = () => {
 
                 {/* Volumes Input Row */}
                 <div className="row mb-3">
-                  <div className="col-6"> {/* Changed to col-6 */}
+                  <div className="col-6">
                     <label className="form-label">Start Volume</label>
                     <input
                       type="number"
@@ -143,7 +139,7 @@ const PriceCheckerPage = () => {
                       required
                     />
                   </div>
-                  <div className="col-6"> {/* Changed to col-6 */}
+                  <div className="col-6">
                     <label className="form-label">End Volume</label>
                     <input
                       type="number"
@@ -156,7 +152,6 @@ const PriceCheckerPage = () => {
                       required
                     />
                   </div>
-                   {/* Removed Total Volumes input as it's not used by backend */}
                 </div>
 
                 {/* Condition Select */}
@@ -179,7 +174,7 @@ const PriceCheckerPage = () => {
                 {/* Submit Button */}
                 <button
                   type="submit"
-                  className="btn btn-lg btn-block" // Assuming you have btn styles
+                  className="btn btn-lg btn-block"
                   disabled={loading}
                 >
                   {loading ? 'Checking Prices...' : 'Check Price'}
@@ -187,7 +182,7 @@ const PriceCheckerPage = () => {
 
                 {/* Error Display */}
                 {error && (
-                  <div className="alert bg-danger text-white mt-3 p-3"> {/* Assuming alert styles */}
+                  <div className="alert bg-danger text-white mt-3 p-3">
                     {error}
                   </div>
                 )}
@@ -204,7 +199,7 @@ const PriceCheckerPage = () => {
                     {/* Optional: Add a spinner */}
                 </div>
             )}
-            {!loading && result ? ( // Display results only when not loading and result exists
+            {!loading && result ? (
               <div className="card p-4">
                 <h2 className="mb-3">Price Analysis</h2>
                 <div className="price-result">
@@ -217,71 +212,63 @@ const PriceCheckerPage = () => {
                     <>
                       <div className="d-flex justify-between align-center mb-3">
                         <span>Est. Set Price:</span>
-                        {/* Use the updated formatCurrency */}
                         <span className="price-value">{formatCurrency(result.pricing.estimatedPrice)}</span>
                       </div>
 
                       <div className="d-flex justify-between align-center mb-3">
                         <span>Est. Price Per Vol:</span>
-                         {/* Use the updated formatCurrency */}
                         <span className="price-value">{formatCurrency(result.pricing.pricePerVolume)}</span>
                       </div>
 
-                       <div className="d-flex justify-between align-center mb-3">
-                         <span>Volumes in Query:</span>
-                         <span>{result.pricing.numVolumes || 'N/A'}</span>
-                       </div>
+                      <div className="d-flex justify-between align-center mb-3">
+                        <span>Volumes in Query:</span>
+                        <span>{result.pricing.numVolumes || 'N/A'}</span>
+                      </div>
 
-                       {/* Display premium only if non-zero */}
-                       {result.pricing.premiumApplied > 0 && (
-                           <div className="d-flex justify-between align-center mb-3 text-sm">
-                             <span>Premium Applied:</span>
-                             <span>+{(result.pricing.premiumApplied * 100).toFixed(0)}% ({result.pricing.matchType === 'exact' ? 'Exact Match' : (result.query?.type === 'volume_range' && result.pricing.numVolumes === result.series?.totalVolumes ? 'Complete Set' : 'Continuous Range')})</span>
-                           </div>
-                       )}
+                      {/* Display premium only if non-zero */}
+                      {result.pricing.premiumApplied > 0 && (
+                          <div className="d-flex justify-between align-center mb-3 text-sm">
+                            <span>Premium Applied:</span>
+                            <span>+{(result.pricing.premiumApplied * 100).toFixed(0)}% ({result.pricing.matchType === 'exact' ? 'Exact Match' : (result.query?.type === 'volume_range' && result.pricing.numVolumes === result.series?.totalVolumes ? 'Complete Set' : 'Continuous Range')})</span>
+                          </div>
+                      )}
 
-                       {/* Display discount only if non-zero */}
-                       {result.pricing.discontinuityDiscount > 0 && (
-                           <div className="d-flex justify-between align-center mb-3 text-sm text-danger">
-                              <span>Discontinuity Discount:</span>
-                              <span>-{(result.pricing.discontinuityDiscount * 100).toFixed(0)}%</span>
-                           </div>
-                       )}
-
+                      {/* Display discount only if non-zero */}
+                      {result.pricing.discontinuityDiscount > 0 && (
+                          <div className="d-flex justify-between align-center mb-3 text-sm text-danger">
+                             <span>Discontinuity Discount:</span>
+                             <span>-{(result.pricing.discontinuityDiscount * 100).toFixed(0)}%</span>
+                          </div>
+                      )}
 
                       <div className="d-flex justify-between align-center mb-4">
                         <span>Recent Price Trend:</span>
                         <span className={`${result.trend?.trend > 0 ? 'text-success' : (result.trend?.trend < 0 ? 'text-danger' : '')}`}>
-                           {/* Use the updated formatTrend */}
                           {formatTrend(result.trend?.trend)} ({result.trend?.confidence || 'low'} confidence)
                         </span>
                       </div>
 
-                       <div className="text-sm mb-2">
-                         Trend based on {result.trend?.recentSamples || 0} recent vs {result.trend?.olderSamples || 0} older samples.
-                       </div>
-
+                      <div className="text-sm mb-2">
+                        Trend based on {result.trend?.recentSamples || 0} recent vs {result.trend?.olderSamples || 0} older samples.
+                      </div>
                     </>
                   ) : (
                     <div>No specific pricing data calculated. Check inputs or try later.</div>
                   )}
-
-                 {/* Removed Recent Sales display as backend doesn't return it now */}
-
                 </div>
               </div>
-            ) : !loading && ( // Show "How it works" only when not loading and no results
-                 <div className="card p-4">
-                   <h3 className="mb-3">How It Works</h3>
-                   <ol style={{ paddingLeft: '1.5rem' }}>
-                     <li className="mb-2">Enter your manga series name</li>
-                     <li className="mb-2">Specify the volume range (e.g., 1 to 10)</li>
-                     <li className="mb-2">Select the condition</li>
-                     <li className="mb-2">Get value estimates based on recent sales</li>
-                   </ol>
-                   <p className="mt-3">Our algorithm analyzes completed sales data from our database to estimate market values.</p>
-                 </div>
-               )
+            ) : !loading && (
+                <div className="card p-4">
+                  <h3 className="mb-3">How It Works</h3>
+                  <ol style={{ paddingLeft: '1.5rem' }}>
+                    <li className="mb-2">Enter your manga series name</li>
+                    <li className="mb-2">Specify the volume range (e.g., 1 to 10)</li>
+                    <li className="mb-2">Select the condition</li>
+                    <li className="mb-2">Get value estimates based on recent sales</li>
+                  </ol>
+                  <p className="mt-3">Our algorithm analyzes completed sales data from our database to estimate market values.</p>
+                </div>
+              )
             }
           </div>
         </div>
